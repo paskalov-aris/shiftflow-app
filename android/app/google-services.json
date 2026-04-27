@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "107425698762",
+    "project_id": "shiftflow-5a615",
+    "storage_bucket": "shiftflow-5a615.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:107425698762:android:374e420e455b81a00c3533",
+        "android_client_info": {
+          "package_name": "com.shiftflow"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7HKGU0uY_PIq_idTGMu_F1bqAG4FN284"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
