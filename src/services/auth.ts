@@ -1,17 +1,12 @@
-import { getAuth, signInWithEmailAndPassword, signOut as firebaseSignOut } from '@react-native-firebase/auth';
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  createUserWithEmailAndPassword,
+} from '@react-native-firebase/auth';
 
-export const signIn = (email: string, password: string) => {
-  try {
-    signInWithEmailAndPassword(getAuth(), email, password);
-  } catch (error) {
-    console.error(error);
-  }
-};
+export const signIn = (email: string, password: string) => signInWithEmailAndPassword(getAuth(), email, password);
 
-export const signOut = () => {
-  try {
-    firebaseSignOut(getAuth());
-  } catch (error) {
-    console.error(error);
-  }
-};
+export const signUp = (email: string, password: string) => createUserWithEmailAndPassword(getAuth(), email, password);
+
+export const signOut = () => firebaseSignOut(getAuth());

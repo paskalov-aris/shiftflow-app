@@ -3,6 +3,7 @@ import { createStaticNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../stores/authStore';
 import { BottomTabs } from './BottomTabsNavigator/BottomTabsNavigator';
 import LoginScreen from '../screens/LoginScreen/LoginScreen';
+import SignUpScreen from '../screens/SignUpScreen/SignUpScreen';
 
 const useIsSignedIn = () => !!useAuthStore(state => state.user);
 const useIsSignedOut = () => !useAuthStore(state => state.user);
@@ -12,6 +13,10 @@ const RootStack = createNativeStackNavigator({
   screens: {
     Login: {
       screen: LoginScreen,
+      if: useIsSignedOut,
+    },
+    SignUp: {
+      screen: SignUpScreen,
       if: useIsSignedOut,
     },
     Main: {

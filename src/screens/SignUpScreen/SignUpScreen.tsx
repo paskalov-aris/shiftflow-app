@@ -13,46 +13,62 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { EyeIcon, EyeOffIcon, LockIcon, LogoIcon, MailIcon } from '../../assets';
-import { signIn } from '../../services/auth';
+import { EyeIcon, EyeOffIcon, LockIcon, LogoIcon, MailIcon, UserIcon } from '../../assets';
+import { signUp, signOut } from '../../services/auth';
+import { createUserProfile } from '../../services/users';
 import { RootStackParamList } from '../../navigation/navigationTypes';
 
-type LoginNav = NativeStackNavigationProp<RootStackParamList, 'Login'>;
+type SignUpNav = NativeStackNavigationProp<RootStackParamList, 'SignUp'>;
+
+type Role = 'team_lead' | 'worker';
 
 const getErrorMessage = (code: string): string => {
   switch (code) {
-    case 'auth/invalid-credential':
-    case 'auth/wrong-password':
-    case 'auth/user-not-found':
-      return 'Невірний email або пароль';
+    case 'auth/email-already-in-use':
+      return 'Акаунт з таким email вже існує';
     case 'auth/invalid-email':
       return 'Невірний формат email';
-    case 'auth/too-many-requests':
-      return 'Забагато спроб. Спробуйте пізніше';
+    case 'auth/weak-password':
+      return 'Пароль має містити мінімум 6 символів';
     default:
       return 'Сталася помилка. Спробуйте ще раз';
   }
 };
 
-const LoginScreen = () => {
+const SignUpScreen = () => {
+  const navigation = useNavigation<SignUpNav>();
+  const [name, setName] = useState('');
+  const [surname, setSurname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [role, setRole] = useState<Role>('worker');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const navigation = useNavigation<LoginNav>();
-
-  const handleLogin = async () => {
-    if (!email || !password) {
-      setError('Введіть email та пароль');
+  const handleSignUp = async () => {
+    if (!name || !surname || !email || !password) {
+      setError('Заповніть всі поля');
       return;
     }
     setError('');
     setIsSubmitting(true);
     try {
-      await signIn(email.trim(), password);
-      // onAuthStateChanged in App.tsx handles navigation after successful login
+      const { user } = await signUp(email.trim(), password);
+      try {
+        await createUserProfile(user.uid, {
+          name: name.trim(),
+          surname: surname.trim(),
+          email: email.trim(),
+          role,
+          teamId: null,
+        });
+        // onAuthStateChanged in useAuthListener handles navigation to the app
+      } catch (firestoreError) {
+        console.error('Failed to create user profile:', firestoreError);
+        setError('Не вдалося зберегти профіль. Спробуйте ще раз');
+        await signOut();
+      }
     } catch (e: any) {
       setError(getErrorMessage(e.code ?? ''));
     } finally {
@@ -74,11 +90,35 @@ const LoginScreen = () => {
           </View>
 
           {/* Heading */}
-          <Text style={styles.heading}>З поверненням.</Text>
-          <Text style={styles.subtitle}>{'Увійдіть, щоб побачити сьогоднішні зміни\nта задачі вашої бригади.'}</Text>
+          <Text style={styles.heading}>Створіть акаунт.</Text>
+          <Text style={styles.subtitle}>{'Зареєструйтесь, щоб приєднатись\nдо своєї бригади в ShiftFlow.'}</Text>
 
           {/* Form */}
           <View style={styles.form}>
+            <View style={styles.inputRow}>
+              <UserIcon width={18} height={18} color="#9CA3AF" />
+              <TextInput
+                style={styles.input}
+                value={name}
+                onChangeText={setName}
+                placeholder="Ім'я"
+                placeholderTextColor="#9CA3AF"
+                autoCorrect={false}
+              />
+            </View>
+
+            <View style={styles.inputRow}>
+              <View style={styles.iconSpacer} />
+              <TextInput
+                style={styles.input}
+                value={surname}
+                onChangeText={setSurname}
+                placeholder="Прізвище"
+                placeholderTextColor="#9CA3AF"
+                autoCorrect={false}
+              />
+            </View>
+
             <View style={styles.inputRow}>
               <MailIcon width={18} height={18} color="#9CA3AF" />
               <TextInput
@@ -102,6 +142,8 @@ const LoginScreen = () => {
                 placeholder="••••••••"
                 placeholderTextColor="#9CA3AF"
                 secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
               />
               <TouchableOpacity
                 onPress={() => setShowPassword(v => !v)}
@@ -115,23 +157,43 @@ const LoginScreen = () => {
               </TouchableOpacity>
             </View>
 
+            {/* Role toggle */}
+            <View style={styles.roleRow}>
+              <TouchableOpacity
+                style={[styles.rolePill, role === 'team_lead' && styles.rolePillActive]}
+                onPress={() => setRole('team_lead')}
+                activeOpacity={0.8}>
+                <Text style={[styles.rolePillText, role === 'team_lead' && styles.rolePillTextActive]}>Бригадир</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.rolePill, role === 'worker' && styles.rolePillActive]}
+                onPress={() => setRole('worker')}
+                activeOpacity={0.8}>
+                <Text style={[styles.rolePillText, role === 'worker' && styles.rolePillTextActive]}>Працівник</Text>
+              </TouchableOpacity>
+            </View>
+
             {error ? <Text style={styles.error}>{error}</Text> : null}
           </View>
 
-          {/* Login button */}
+          {/* Submit button */}
           <TouchableOpacity
             style={[styles.button, isSubmitting && styles.buttonDisabled]}
-            onPress={handleLogin}
+            onPress={handleSignUp}
             disabled={isSubmitting}
             activeOpacity={0.85}>
-            {isSubmitting ? <ActivityIndicator color="#1C1917" /> : <Text style={styles.buttonText}>Увійти →</Text>}
+            {isSubmitting ? (
+              <ActivityIndicator color="#1C1917" />
+            ) : (
+              <Text style={styles.buttonText}>Зареєструватись →</Text>
+            )}
           </TouchableOpacity>
 
           {/* Footer */}
           <View style={styles.footer}>
-            <Text style={styles.footerGray}>Немає акаунту? </Text>
-            <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate('SignUp')}>
-              <Text style={styles.footerOrange}>Створити акаунт</Text>
+            <Text style={styles.footerGray}>Вже є акаунт? </Text>
+            <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.goBack()}>
+              <Text style={styles.footerOrange}>Увійти</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -189,6 +251,9 @@ const styles = StyleSheet.create({
     height: 52,
     gap: 10,
   },
+  iconSpacer: {
+    width: 18,
+  },
   input: {
     flex: 1,
     fontSize: 15,
@@ -196,6 +261,32 @@ const styles = StyleSheet.create({
   },
   eyeButton: {
     padding: 2,
+  },
+  roleRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  rolePill: {
+    flex: 1,
+    height: 52,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rolePillActive: {
+    backgroundColor: '#F5A623',
+    borderColor: '#F5A623',
+  },
+  rolePillText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  rolePillTextActive: {
+    color: '#1C1917',
   },
   error: {
     fontSize: 13,
@@ -237,4 +328,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LoginScreen;
+export default SignUpScreen;
