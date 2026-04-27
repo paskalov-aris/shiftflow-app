@@ -14,7 +14,7 @@ This is a bachelor's diploma project. The app targets a real gap: existing solut
   - **Firebase Auth** — authentication (email/password, potentially Google sign-in)
 - **Language:** TypeScript
 - **Navigation:** React Navigation
-- **State management:** React Context + hooks (or Zustand if introduced later)
+- **State management:** Zustand
 
 ## Architecture
 
@@ -86,6 +86,16 @@ Rules must enforce role-based access:
 - All writes must validate required fields
 - No unauthenticated access
 
+## Firebase API Style
+
+Always use the **modular API** from `@react-native-firebase`. Do not use the deprecated namespaced API (`import auth from '@react-native-firebase/auth'` → `auth().method()`). Instead, import individual functions from the modular path:
+
+```typescript
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from '@react-native-firebase/auth';
+```
+
+This applies to all Firebase packages (auth, firestore, etc.).
+
 ## Development Guidelines
 
 - Keep components small and focused. Extract reusable UI into `components/`.
@@ -127,3 +137,4 @@ npm run lint
 - Primary language for the UI is Ukrainian.
 - This is a diploma project, not a production app. Keep everything as simple as possible. No over-engineering, no premature abstractions, no complex state management unless absolutely necessary. Inline styles are fine. Hardcoded strings are fine. If a feature can be faked with static data or a simple Firestore query instead of a Cloud Function — do that. The goal is a working demo that clearly shows the concept, not a polished product ready for the App Store. Time is the main constraint — cut corners where it doesn't hurt the core functionality.
 - The diploma thesis itself is written in Ukrainian. Code and technical docs (like this file) are in English.
+- Do not do any commits by yourself. I will do them manually.
